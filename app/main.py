@@ -43,10 +43,10 @@ def index():
     # Запускаем задачу создания ZIP-архива
     task = create_zip_task.apply_async(args=[folder_path, zip_path])
 
-    # Возвращаем ID задачи и ссылку на success.html
+    # Возвращаем ID задачи и ссылку для скачивания
     return jsonify({
         'task_id': task.id,
-        'link': url_for('success', link=url_for('download_files', unique_id=unique_id, _external=True))
+        'link': url_for('download_files', unique_id=unique_id, _external=True)  # Исправленная ссылка
     })
 
 
