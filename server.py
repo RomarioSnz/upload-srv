@@ -1,6 +1,9 @@
 from app.main import app  # Импортируем приложение из main.py
 from waitress import serve
 import os
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 if __name__ == '__main__':
     # Проверяем режим запуска: Docker или локально
