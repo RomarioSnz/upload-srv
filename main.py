@@ -1,6 +1,8 @@
 import os
 import uuid
 import shutil
+import hashlib
+import time
 from flask import Flask, request, jsonify, send_from_directory, redirect, url_for
 
 app = Flask(__name__)
@@ -15,6 +17,13 @@ def create_unique_folder():
     folder_path = os.path.join(NETWORK_FOLDER, unique_id)
     os.makedirs(folder_path, exist_ok=True)
     return unique_id, folder_path
+
+# Функция генерации уникального имени файла
+def generate_unique_filename(filename):
+    ext = os.path.splitext(filename)[1]  # Получаем расширение файла
+    # Генерация хэша с использованием имени и времени
+    unique_name = hashlib.md5(f"{filename}{time.time()}".encode()).hexdigest()
+    return f"{unique_name}{ext}"  # Возвращаем уникальное имя с расширением
 
 # Главная страница с формой загрузки
 @app.route('/', methods=['GET', 'POST'])
@@ -49,60 +58,47 @@ def index():
                 const fileList = document.getElementById("fileList");
                 let filesArray = [];
 
-                // Обновление списка файлов
                 fileInput.addEventListener("change", function () {
-                    const newFiles = Array.from(fileInput.files); // Преобразуем FileList в массив
-                    filesArray = [...filesArray, ...newFiles]; // Добавляем новые файлы
-
-                    updateFileList(); // Перерисовываем список
+                    const newFiles = Array.from(fileInput.files);
+                    filesArray = [...filesArray, ...newFiles];
+                    updateFileList();
                 });
 
-                // Функция обновления списка файлов
                 function updateFileList() {
-                    fileList.innerHTML = ""; // Очищаем текущий список
-
+                    fileList.innerHTML = "";
                     filesArray.forEach((file, index) => {
                         const listItem = document.createElement("li");
                         listItem.className = "list-group-item d-flex justify-content-between align-items-center";
-
-                        // Добавляем название файла
                         listItem.textContent = file.name;
-
-                        // Добавляем кнопку удаления файла
                         const removeButton = document.createElement("button");
                         removeButton.className = "btn btn-danger btn-sm";
                         removeButton.textContent = "Remove";
-                        removeButton.onclick = () => removeFile(index); // Обработчик удаления
-                        
+                        removeButton.onclick = () => removeFile(index);
                         listItem.appendChild(removeButton);
                         fileList.appendChild(listItem);
                     });
 
-                    // Обновляем input files для отправки формы
                     const dataTransfer = new DataTransfer();
                     filesArray.forEach(file => dataTransfer.items.add(file));
                     fileInput.files = dataTransfer.files;
                 }
 
-                // Функция удаления файла из списка
                 function removeFile(index) {
-                    filesArray.splice(index, 1); // Удаляем файл из массива
-                    updateFileList(); // Перерисовываем список
+                    filesArray.splice(index, 1);
+                    updateFileList();
                 }
 
-                // Очистка выбора файлов
                 function clearFiles() {
                     filesArray = [];
-                    fileInput.value = ""; // Очищаем input
-                    updateFileList(); // Перерисовываем список
+                    fileInput.value = "";
+                    updateFileList();
                 }
             </script>
         </body>
         </html>
         '''
-
     elif request.method == 'POST':
-        # Обработка загрузки файлов
+        # Проверка на наличие файлов
         if 'files[]' not in request.files:
             return jsonify({'error': 'No files part'}), 400
 
@@ -113,9 +109,10 @@ def index():
         # Создаём уникальную папку
         unique_id, folder_path = create_unique_folder()
 
-        # Сохраняем файлы в папке
+        # Сохраняем файлы с уникальными именами
         for file in files:
-            file.save(os.path.join(folder_path, file.filename))
+            unique_filename = generate_unique_filename(file.filename)
+            file.save(os.path.join(folder_path, unique_filename))
 
         # Создаём ZIP-архив
         zip_path = os.path.join(NETWORK_FOLDER, f"{unique_id}.zip")
@@ -129,21 +126,18 @@ def index():
         # Удаляем исходные файлы и папку
         shutil.rmtree(folder_path)
 
-        # Сохраняем ссылку для скачивания
+        # Ссылка для скачивания
         download_link = request.url_root + f'download/{unique_id}'
 
-        # **ПЕРЕНАПРАВЛЯЕМ НА ОТДЕЛЬНУЮ СТРАНИЦУ С ССЫЛКОЙ**
+        # Перенаправляем на страницу с ссылкой
         return redirect(url_for('success', link=download_link))
 
 # Страница с успешной загрузкой
 @app.route('/success')
 def success():
-    # **Если страница перезагружена – возвращаемся на главную**
     link = request.args.get('link')
     if not link:
         return redirect(url_for('index'))
-
-    # Отображаем ссылку
     return f'''
     <!DOCTYPE html>
     <html lang="en">
@@ -155,13 +149,13 @@ def success():
     </head>
     <body class="bg-light">
         <div class="container mt-5 p-4 border rounded shadow bg-white">
-            <h1 class="text-success text-center">Файлы успешно загруженны</h1>
+            <h1 class="text-success text-center">Файлы успешно загружены!</h1>
             <p class="text-center">Ссылка для скачивания:</p>
             <div class="input-group mb-3">
                 <input type="text" id="downloadLink" value="{link}" class="form-control" readonly>
                 <button class="btn btn-outline-primary" onclick="copyLink()">Скопировать ссылку</button>
             </div>
-            <a href="/" class="btn btn-secondary w-100">Загрузить еще файлы</a>
+            <a href="/" class="btn btn-secondary w-100">Загрузить ещё файлы</a>
         </div>
         <script>
             function copyLink() {{
@@ -175,12 +169,9 @@ def success():
     </html>
     '''
 
-# Скачивание ZIP-архива
 @app.route('/download/<unique_id>', methods=['GET'])
 def download_files(unique_id):
     zip_path = os.path.join(NETWORK_FOLDER, f"{unique_id}.zip")
     if not os.path.exists(zip_path):
         return jsonify({'error': 'File not found'}), 404
-
     return send_from_directory(NETWORK_FOLDER, f"{unique_id}.zip", as_attachment=True)
-
