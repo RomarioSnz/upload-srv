@@ -1,34 +1,80 @@
 #!/bin/bash
 
 # ===== ПЕРЕМЕННЫЕ =====
-APP_DIR="/srv/new"  # Путь к вашему приложению
+APP_DIR="/srv/file"  # Путь к папке проекта
 ENV_FILE="$APP_DIR/.env"  # Файл переменных окружения
+LOG_DIR="$APP_DIR/logs"  # Каталог для логов
+LOG_FILE="$LOG_DIR/install.log"  # Файл логов
 CELERY_SERVICE="/etc/systemd/system/celery.service"
+PYTHON_VERSION="python3.10"  # Версия Python для Ubuntu 22.04
+VENV_DIR="$APP_DIR/venv"  # Виртуальное окружение
 
 # ===== ФУНКЦИИ =====
-function install_dependencies() {
-    echo "Обновление пакетов..."
-    sudo apt update && sudo apt upgrade -y
 
-    echo "Установка Python и Redis..."
-    sudo apt install -y python3 python3-pip python3-venv redis-server
-
-    echo "Установка Python-зависимостей..."
-    pip install --upgrade pip
-    pip install celery[redis] flask redis
+log() {
+    mkdir -p $LOG_DIR  # Создаём папку логов, если её нет
+    touch $LOG_FILE  # Создаём файл логов
+    echo "$(date '+%Y-%m-%d %H:%M:%S') $1" | tee -a $LOG_FILE
 }
 
-function setup_redis() {
-    echo "Настройка Redis..."
+# === 1. Удаление всех компонентов ===
+cleanup_system() {
+    log "Удаление всех компонентов и зависимостей..."
+
+    # Остановка и удаление сервисов Celery и Redis
+    sudo systemctl stop celery
+    sudo systemctl disable celery
+    sudo rm -f $CELERY_SERVICE
+    sudo systemctl daemon-reload
+
+    sudo systemctl stop redis
+    sudo systemctl disable redis
+    sudo apt purge --auto-remove redis-server -y
+
+    # Удаление Python и зависимостей
+    sudo apt purge --auto-remove $PYTHON_VERSION python3-pip python3-venv -y
+    sudo apt autoremove -y
+    sudo apt autoclean
+
+    # Удаление виртуального окружения и данных
+    rm -rf $VENV_DIR
+    rm -rf $APP_DIR/uploads
+    rm -rf $LOG_DIR
+    rm -rf $APP_DIR/__pycache__
+
+    log "Система очищена."
+}
+
+# === 2. Установка зависимостей ===
+install_dependencies() {
+    log "Обновление системы..."
+    sudo apt update && sudo apt upgrade -y
+
+    log "Установка Python, Redis и других зависимостей..."
+    sudo apt install -y $PYTHON_VERSION $PYTHON_VERSION-venv python3-pip redis-server git curl wget gcc build-essential libssl-dev libffi-dev python3-dev
+
+    log "Создание виртуального окружения..."
+    $PYTHON_VERSION -m venv $VENV_DIR
+    source $VENV_DIR/bin/activate
+
+    log "Установка Python-зависимостей..."
+    pip install --upgrade pip
+    pip install flask redis celery waitress  # Включает waitress
+    pip install -r $APP_DIR/docker/requirements.txt  # Установка из requirements.txt
+}
+
+# === 3. Настройка Redis ===
+setup_redis() {
+    log "Настройка Redis..."
     sudo systemctl enable redis
     sudo systemctl start redis
     sudo systemctl status redis --no-pager
 }
 
-function setup_celery_service() {
-    echo "Создание systemd-сервиса для Celery..."
+# === 4. Настройка Celery ===
+setup_celery_service() {
+    log "Создание systemd-сервиса для Celery..."
 
-    # Создание файла celery.service
     sudo tee $CELERY_SERVICE > /dev/null <<EOF
 [Unit]
 Description=Celery Worker Service
@@ -40,7 +86,7 @@ User=root
 Group=root
 WorkingDirectory=$APP_DIR
 EnvironmentFile=$ENV_FILE
-ExecStart=/usr/bin/python3 -m celery -A app.main.celery worker --loglevel=info
+ExecStart=$VENV_DIR/bin/python3 -m celery -A app.main.celery worker --loglevel=info
 Restart=always
 RestartSec=10
 
@@ -48,75 +94,103 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-    echo "Перезагрузка демонов systemd..."
+    log "Перезагрузка systemd..."
     sudo systemctl daemon-reload
-
-    echo "Включение автозапуска Celery..."
     sudo systemctl enable celery
     sudo systemctl start celery
     sudo systemctl status celery --no-pager
 }
 
-function check_status() {
-    echo "Проверка статусов сервисов..."
+# === 5. Создание переменных окружения ===
+setup_env_file() {
+    if [ ! -f "$ENV_FILE" ]; then
+        log "Создание .env файла..."
+        cat <<EOF > $ENV_FILE
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
+NETWORK_FOLDER=$APP_DIR/uploads
+EOF
+    fi
+}
 
-    echo "Redis:"
+# === 6. Проверка статусов сервисов ===
+check_status() {
+    log "Проверка статуса Redis..."
     sudo systemctl status redis --no-pager
 
-    echo "Celery:"
+    log "Проверка статуса Celery..."
     sudo systemctl status celery --no-pager
 }
 
-function restart_services() {
-    echo "Перезапуск Redis..."
+# === 7. Перезапуск сервисов ===
+restart_services() {
+    log "Перезапуск Redis..."
     sudo systemctl restart redis
-    sudo systemctl status redis --no-pager
 
-    echo "Перезапуск Celery..."
+    log "Перезапуск Celery..."
     sudo systemctl restart celery
-    sudo systemctl status celery --no-pager
 }
 
-function logs_services() {
-    echo "Логи Celery:"
+# === 8. Просмотр логов сервисов ===
+logs_services() {
+    log "Логи Celery:"
     journalctl -u celery.service -n 50
 
-    echo "Логи Redis:"
+    log "Логи Redis:"
     journalctl -u redis.service -n 50
 }
 
-# ===== ОСНОВНОЕ МЕНЮ =====
+# === 9. Запуск приложения ===
+start_app() {
+    log "Запуск приложения..."
+    cd $APP_DIR
+    source $VENV_DIR/bin/activate  # Автоматическая активация окружения
+    python3 server.py
+}
+
+# === МЕНЮ ===
+log "===== Начало установки и настройки сервера ====="
 echo "Выберите действие:"
-echo "1. Установка и настройка Celery и Redis"
-echo "2. Проверка статуса сервисов"
-echo "3. Перезапуск сервисов"
-echo "4. Просмотр логов"
-echo "5. Выход"
+echo "1. Полная установка и настройка сервера"
+echo "2. Очистка системы и удаление всех зависимостей"
+echo "3. Проверка статуса сервисов"
+echo "4. Перезапуск сервисов"
+echo "5. Просмотр логов"
+echo "6. Запуск приложения"
+echo "7. Выход"
 
 read -p "Введите номер действия: " ACTION
 
 case $ACTION in
     1)
-        echo "Начало установки и настройки..."
+        log "Начинается полная установка и настройка..."
         install_dependencies
         setup_redis
+        setup_env_file
         setup_celery_service
-        echo "Настройка завершена!"
+        log "Установка завершена!"
         ;;
     2)
-        check_status
+        log "Очистка системы..."
+        cleanup_system
         ;;
     3)
-        restart_services
+        check_status
         ;;
     4)
-        logs_services
+        restart_services
         ;;
     5)
-        echo "Выход..."
+        logs_services
+        ;;
+    6)
+        start_app
+        ;;
+    7)
+        log "Выход..."
         exit 0
         ;;
     *)
-        echo "Неверный выбор! Попробуйте снова."
+        log "Неверный выбор! Попробуйте снова."
         ;;
 esac
