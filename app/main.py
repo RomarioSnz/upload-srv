@@ -1,4 +1,3 @@
-
 import time
 from flask import Flask, request, jsonify, redirect, url_for, render_template, send_file
 from . import create_app
@@ -14,7 +13,6 @@ logging.basicConfig(level=logging.DEBUG)
 # Создание приложения и Celery
 app = create_app()
 celery = app.celery
-
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -57,7 +55,6 @@ def index():
         'link': url_for('download_files', unique_id=unique_id, _external=True)
     })
 
-
 @app.route('/success')
 def success():
     # Отображение страницы успешной загрузки
@@ -65,7 +62,6 @@ def success():
     if not link:
         return redirect(url_for('index'))
     return render_template('success.html', link=link)
-
 
 @app.route('/download/<unique_id>', methods=['GET'])
 def download_files(unique_id):
@@ -88,7 +84,6 @@ def download_files(unique_id):
         logging.error(f"Ошибка при отправке файла: {e}")
         return jsonify({'error': 'Failed to download file'}), 500
 
-
 @app.route('/status/<task_id>', methods=['GET'])
 def task_status(task_id):
     # Проверка статуса задачи
@@ -104,7 +99,6 @@ def task_status(task_id):
         response = {'state': task.state, 'error': str(task.info)}
 
     return jsonify(response)
-
 
 if __name__ == "__main__":
     app.run()

@@ -1,4 +1,3 @@
-
 from celery import Celery, shared_task
 import os
 import zipfile

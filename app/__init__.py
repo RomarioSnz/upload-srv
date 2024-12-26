@@ -38,7 +38,6 @@ def create_app():
 
     return app
 
-
 def make_celery(app):
     celery = Celery(
         app.import_name,

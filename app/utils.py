@@ -4,7 +4,6 @@ import hashlib
 import time
 import logging
 
-
 def create_unique_folder(base_path):
     """
     Создаёт уникальную папку в указанной директории.
@@ -24,7 +23,6 @@ def create_unique_folder(base_path):
     except Exception as e:
         logging.error(f"Ошибка создания папки {folder_path}: {e}")
         raise
-
 
 def generate_unique_filename(filename):
     """
