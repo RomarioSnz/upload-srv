@@ -1,28 +1,71 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Files</title>
+    <title>Загрузка файлов и папок</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .file-list-container {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+            word-break: break-word;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        #clearSelectionBtn {
+            display: none;
+        }
+    </style>
 </head>
 
 <body class="bg-light">
     <div class="container mt-5 p-4 border rounded shadow bg-white">
-        <h1 class="text-center mb-4">Загрузка файлов</h1>
+        <h1 class="text-center mb-4">Загрузка файлов и папок</h1>
 
-        <!-- Форма загрузки -->
-        <form id="uploadForm" enctype="multipart/form-data" class="mb-4">
-            <!-- Выбор файлов -->
-            <input type="file" id="fileInput" name="files[]" class="form-control mb-3" multiple required>
-            <ul id="fileList" class="list-group mb-3"></ul>
-            <button type="submit" class="btn btn-primary w-100">Загрузить</button>
-        </form>
+        <!-- Кнопки выбора -->
+        <div class="d-flex justify-content-center gap-3 mb-4">
+            <button id="selectFilesBtn" class="btn btn-outline-primary">Выбрать файлы</button>
+            <button id="selectFoldersBtn" class="btn btn-outline-secondary">Выбрать папки</button>
+        </div>
 
-        <!-- Прогресс загрузки файлов -->
-        <div id="progressContainer" style="display: none;">
+        <!-- Кнопка очистки -->
+        <div class="d-flex justify-content-end mb-2">
+            <button id="clearSelectionBtn" class="btn btn-outline-danger btn-sm">Очистить список</button>
+        </div>
+
+        <!-- Скрытые input'ы -->
+        <input type="file" id="fileInput" multiple style="display: none;">
+        <input type="file" id="folderInput" multiple webkitdirectory directory style="display: none;">
+
+        <!-- Список файлов -->
+        <div id="fileList" class="file-list-container mb-3">
+            <p class="text-center text-muted">Файлы не выбраны</p>
+        </div>
+
+        <!-- Кнопка загрузки -->
+        <button id="uploadButton" class="btn btn-primary w-100">Загрузить</button>
+
+        <!-- Прогресс загрузки -->
+        <div id="progressContainer" style="display: none;" class="mt-4">
             <p id="statusText" class="text-center text-info fw-bold">Загрузка файлов...</p>
             <div class="progress mb-3">
                 <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;">0%</div>
@@ -37,105 +80,124 @@
     </div>
 
     <script>
-        const form = document.getElementById("uploadForm");
+        const fileInput = document.getElementById("fileInput");
+        const folderInput = document.getElementById("folderInput");
+        const selectFilesBtn = document.getElementById("selectFilesBtn");
+        const selectFoldersBtn = document.getElementById("selectFoldersBtn");
+        const clearSelectionBtn = document.getElementById("clearSelectionBtn");
+        const fileList = document.getElementById("fileList");
+        const uploadButton = document.getElementById("uploadButton");
         const progressContainer = document.getElementById("progressContainer");
         const uploadProgressBar = document.getElementById("uploadProgressBar");
         const zipProgressBar = document.getElementById("zipProgressBar");
         const zipStatusText = document.getElementById("zipStatusText");
-        const fileInput = document.getElementById("fileInput");
-        const fileList = document.getElementById("fileList");
 
         let selectedFiles = [];
 
-        // Обновление списка файлов
-        fileInput.addEventListener("change", () => {
-            fileList.innerHTML = ""; // Очистка списка
-            selectedFiles = Array.from(fileInput.files);
+        // Открытие файлового менеджера
+        selectFilesBtn.addEventListener("click", () => fileInput.click());
+        selectFoldersBtn.addEventListener("click", () => folderInput.click());
 
-            selectedFiles.forEach((file, index) => {
-                const li = document.createElement("li");
-                li.className = "list-group-item d-flex justify-content-between align-items-center";
-                li.innerHTML = `${file.name} <button type="button" class="btn btn-danger btn-sm" onclick="removeFile(${index})">Удалить</button>`;
-                fileList.appendChild(li);
-            });
+        // Очистка списка файлов
+        clearSelectionBtn.addEventListener("click", () => {
+            selectedFiles = [];
+            renderFileList();
+            toggleClearButton();
         });
 
-        // Удаление файла из списка
-        function removeFile(index) {
-            selectedFiles.splice(index, 1);
-            const dt = new DataTransfer();
-            selectedFiles.forEach(file => dt.items.add(file));
-            fileInput.files = dt.files;
-            fileInput.dispatchEvent(new Event("change")); // Обновить список
+        // Добавление файлов и папок в общий список
+        function handleFiles(files, isFolder = false) {
+            Array.from(files).forEach(file => {
+                let relativePath;
+                if (isFolder) {
+                    relativePath = file.webkitRelativePath || file.name;
+                } else {
+                    relativePath = file.name;
+                }
+                if (!selectedFiles.some(f => f.path === relativePath)) {
+                    selectedFiles.push({ file, path: relativePath });
+                }
+            });
+            renderFileList();
+            toggleClearButton();
         }
 
-        // Загрузка файлов с прогресс-баром
-        form.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const formData = new FormData(form);
+        fileInput.addEventListener("change", () => {
+            handleFiles(fileInput.files, false);
+            fileInput.value = "";
+        });
 
-            // Показать контейнер прогресса
+        folderInput.addEventListener("change", () => {
+            handleFiles(folderInput.files, true);
+            folderInput.value = "";
+        });
+
+        function renderFileList() {
+            fileList.innerHTML = "";
+            if (selectedFiles.length === 0) {
+                fileList.innerHTML = '<p class="text-center text-muted">Файлы не выбраны</p>';
+            } else {
+                selectedFiles.forEach((item, index) => {
+                    const div = document.createElement("div");
+                    div.className = "file-item";
+                    div.innerHTML = `${item.path}
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeFile(${index})">Удалить</button>`;
+                    fileList.appendChild(div);
+                });
+            }
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            renderFileList();
+            toggleClearButton();
+        }
+
+        function toggleClearButton() {
+            clearSelectionBtn.style.display = selectedFiles.length > 0 ? "block" : "none";
+        }
+
+        uploadButton.addEventListener("click", async () => {
+            const formData = new FormData();
+            selectedFiles.forEach(item => formData.append("files[]", item.file, item.path));
+
             progressContainer.style.display = "block";
             uploadProgressBar.style.width = "0%";
-            uploadProgressBar.innerText = "0%";
 
-            // AJAX для загрузки файлов
             const xhr = new XMLHttpRequest();
             xhr.open("POST", "/");
 
-            // Прогресс загрузки файлов
             xhr.upload.onprogress = function (e) {
-                if (e.lengthComputable) {
-                    const percent = Math.round((e.loaded / e.total) * 100);
-                    uploadProgressBar.style.width = `${percent}%`;
-                    uploadProgressBar.innerText = `${percent}%`;
-                }
+                const percent = Math.round((e.loaded / e.total) * 100);
+                uploadProgressBar.style.width = `${percent}%`;
+                uploadProgressBar.innerText = `${percent}%`;
             };
 
             xhr.onload = async function () {
-                if (xhr.status === 200) {
-                    const data = JSON.parse(xhr.responseText);
-
-                    if (data.task_id) {
-                        // Показываем прогресс упаковки ZIP
-                        zipStatusText.style.display = "block";
-                        document.getElementById("zipProgressContainer").style.display = "block";
-                        trackZipProgress(data.task_id, data.link);
-                    } else {
-                        alert("Ошибка при загрузке.");
-                    }
-                } else {
-                    alert("Ошибка сети!");
+                const data = JSON.parse(xhr.responseText);
+                if (data.task_id) {
+                    zipStatusText.style.display = "block";
+                    document.getElementById("zipProgressContainer").style.display = "block";
+                    trackZipProgress(data.task_id, data.link);
                 }
             };
-
             xhr.send(formData);
         });
 
-        // Прогресс упаковки ZIP
         async function trackZipProgress(taskId, downloadLink) {
             try {
                 const response = await fetch(`/status/${taskId}`);
                 const data = await response.json();
 
-                if (data.state === "PENDING") {
-                    zipProgressBar.style.width = "0%";
-                    zipProgressBar.innerText = "0%";
-                } else if (data.state === "PROGRESS") {
+                if (data.state === "PROGRESS") {
                     zipProgressBar.style.width = `${data.progress}%`;
                     zipProgressBar.innerText = `${data.progress}%`;
                 } else if (data.state === "SUCCESS") {
                     zipProgressBar.style.width = "100%";
                     zipProgressBar.innerText = "100%";
-                    window.location.href = `/success?link=${downloadLink}`;
-                    return;
-                } else {
-                    alert("Ошибка при упаковке в ZIP.");
-                    return;
+                    window.location.href = `/success?link=${encodeURIComponent(downloadLink)}`;
                 }
-
-                // Повторная проверка каждые 1 сек
-                setTimeout(() => trackZipProgress(taskId, downloadLink), 1000);
+                setTimeout(() => trackZipProgress(taskId, downloadLink), 500);
             } catch (error) {
                 console.error(error);
                 alert("Ошибка получения статуса упаковки.");
