@@ -16,7 +16,7 @@ PORT = int(os.getenv('PORT', 8000))  # По умолчанию порт 8000
 if __name__ == '__main__':
     if os.getenv('DOCKER_ENV'):  # Если запускается в Docker
         logging.info("Запуск в Docker-среде с Waitress")
-        serve(app, host=HOST, port=PORT)
+        serve(app, host=HOST, port=PORT, max_request_body_size=10 * 1024 * 1024 * 1024)
     else:  # Локальный режим (для разработки)
         logging.info("Запуск в локальной среде в отладочном режиме")
-        app.run(debug=True, host=HOST, port=PORT)
+        app.run(debug=True, host=HOST, port=PORT, max_request_body_size=10 * 1024 * 1024 * 1024)
