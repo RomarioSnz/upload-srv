@@ -8,3 +8,4 @@ install.log
 venv
 .env
 /logs/install.log
+.idea/

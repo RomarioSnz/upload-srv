@@ -1,28 +1,55 @@
-body {
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
+/* Подключение шрифтов Rosatom */
+@font-face {
+    font-family: 'Rosatom';
+    font-style: normal;
+    font-weight: 400; /* Regular */
+    src: url('/static/webfonts/Rosatom-Regular_W.woff2') format('woff2'),
+         url('/static/webfonts/Rosatom-Regular_W.ttf') format('truetype');
 }
 
+@font-face {
+    font-family: 'Rosatom';
+    font-style: normal;
+    font-weight: 700; /* Bold */
+    src: url('/static/webfonts/Rosatom-Bold_W.woff2') format('woff2'),
+         url('/static/webfonts/Rosatom-Bold_W.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'Rosatom';
+    font-style: normal;
+    font-weight: 300; /* Light */
+    src: url('/static/webfonts/Rosatom-Light_W.woff2') format('woff2'),
+         url('/static/webfonts/Rosatom-Light_W.ttf') format('truetype');
+}
+
+/* Контейнер */
 .container {
     max-width: 600px;
-    margin: 0 auto;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-family: 'Rosatom', Arial, sans-serif; /* Основной шрифт */
 }
 
-h1 {
-    color: #007bff;
-}
-
-ul.list-group {
-    margin-bottom: 20px;
-}
-
-input.form-control {
+/* Кнопки */
+button {
+    display: inline-block;
+    padding: 10px 15px;
+    font-size: 16px;
     border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: 'Rosatom', Arial, sans-serif; /* Основной шрифт */
 }
 
 button.btn-primary {
     background-color: #007bff;
-    border: none;
+    color: #fff;
+    font-weight: 700; /* Жирный шрифт для акцента */
 }
 
 button.btn-primary:hover {
@@ -30,8 +57,9 @@ button.btn-primary:hover {
 }
 
 button.btn-secondary {
-    border: none;
     background-color: #6c757d;
+    color: #fff;
+    font-weight: 400; /* Regular */
 }
 
 button.btn-secondary:hover {
@@ -40,9 +68,62 @@ button.btn-secondary:hover {
 
 button.btn-danger {
     background-color: #dc3545;
-    border: none;
+    color: #fff;
+    font-weight: 700; /* Жирный для акцента */
 }
 
 button.btn-danger:hover {
     background-color: #c82333;
+}
+
+/* Прогресс-бар */
+.progress {
+    background-color: #e9ecef;
+    border-radius: 5px;
+    height: 20px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.progress-bar {
+    background-color: #007bff;
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* Container Styling */
+.container {
+    background: linear-gradient(to right, #f8f9fa, #e9ecef);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Button Hover Effects */
+.btn-secondary:hover {
+    background-color: #5a6268;
+    color: #ffffff;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Input Group Styling */
+.input-group {
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Form Control Styling */
+.form-control {
+    border-radius: 0;
+    padding: 15px;
+    font-family: 'Rosatom', Arial, sans-serif;
+    font-weight: 400;
+}
+
+/* Primary Button */
+.btn-primary {
+    border-radius: 0;
 }
