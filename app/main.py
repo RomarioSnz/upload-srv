@@ -16,9 +16,12 @@ celery = app.celery
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    # Получаем имя пользователя из заголовка REMOTE_USER
+    username = request.headers.get('REMOTE_USER')
+
     if request.method == 'GET':
         # Отображаем страницу загрузки файлов
-        return render_template('index.html')
+        return render_template('index.html', username=username)  # передаем имя пользователя в шаблон
 
     # Получаем загруженные файлы
     files = request.files.getlist('files[]')

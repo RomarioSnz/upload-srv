@@ -4,7 +4,7 @@ services:
   web:
     build:
       context: .
-      dockerfile: Dockerfile.web
+      dockerfile: dockerfiles/Dockerfile.web
     ports:
       - "8000:8000"
     depends_on:
@@ -20,7 +20,7 @@ services:
   worker:
     build:
       context: .
-      dockerfile: Dockerfile.worker
+      dockerfile: dockerfiles/Dockerfile.worker
     depends_on:
       - redis
     environment:
