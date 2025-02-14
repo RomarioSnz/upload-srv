@@ -9,13 +9,18 @@ services:
       - "8000:8000"
     depends_on:
       - redis
+      - postgres
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - NETWORK_FOLDER=/app/uploads
       - DOCKER_ENV=1
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/mydb
     volumes:
       - ./uploads:/app/uploads
+    networks:
+      - app_network
+    restart: on-failure
 
   worker:
     build:
@@ -23,14 +28,63 @@ services:
       dockerfile: dockerfiles/Dockerfile.worker
     depends_on:
       - redis
+      - postgres
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - NETWORK_FOLDER=/app/uploads
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/mydb
     volumes:
       - ./uploads:/app/uploads
+    networks:
+      - app_network
+    restart: on-failure
 
   redis:
-    image: "redis:6.2"
+    image: "registry.astralinux.ru/library/astra/ubi17-redis7015:latest"
+    container_name: redis
     ports:
       - "6379:6379"
+    command: ["redis-server", "--bind", "0.0.0.0", "--protected-mode", "no"]
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - app_network
+
+  postgres:
+    image: "postgres:latest"
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=mydb
+      - TZ=Europe/Yekaterinburg
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - app_network
+
+
+  apache:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.apache
+    ports:
+      - "80:80"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

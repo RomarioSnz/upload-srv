@@ -1,0 +1,41 @@
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Содержимое архива {{ archive }}</title>
+  <link rel="stylesheet" href="/static/css/styles.css?2">
+  <style>
+    .button-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .btn {
+      padding: 8px 16px;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Содержимое архива: {{ archive }}</h1>
+    {% if file_list %}
+      <ul class="file-list-container">
+        {% for file in file_list %}
+          <li class="file-item">📄 {{ file }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-center">Архив пуст или не удалось прочитать его содержимое.</p>
+    {% endif %}
+    <div class="button-group">
+      <a href="{{ url_for('list_uploads') }}" class="btn btn-secondary">Вернуться к архивам</a>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">На главную</a>
+    </div>
+  </div>
+</body>
+</html>

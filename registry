@@ -1,0 +1,11 @@
+"10.0.10.171:5000/ubi17-redis:1.7.6uu2"
+FROM 10.0.10.171:5000/ubi17-apache24:1.7.6uu2
+FROM 10.0.10.171:5000/ubi17-python37:1.7.6uu2
+FROM 10.0.10.171:5000/ubi17-python37:1.7.6uu2
+FROM 10.0.10.171:5000/ubi17-postgresql11:1.7.6uu2
+
+
+"registry.astralinux.ru/library/astra/ubi17-redis7015:latest"
+FROM registry.astralinux.ru/library/astra/ubi17-apache24:latest
+FROM registry.astralinux.ru/library/astra/ubi17-postgresql11:latest
+FROM registry.astralinux.ru/library/astra/ubi17-python37:latest

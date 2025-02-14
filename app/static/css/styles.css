@@ -1,129 +1,342 @@
-/* Подключение шрифтов Rosatom */
-@font-face {
-    font-family: 'Rosatom';
-    font-style: normal;
-    font-weight: 400; /* Regular */
-    src: url('/static/webfonts/Rosatom-Regular_W.woff2') format('woff2'),
-         url('/static/webfonts/Rosatom-Regular_W.ttf') format('truetype');
+/* Универсальное правило box-sizing */
+*, *::before, *::after {
+    box-sizing: border-box;
 }
 
-@font-face {
-    font-family: 'Rosatom';
-    font-style: normal;
-    font-weight: 700; /* Bold */
-    src: url('/static/webfonts/Rosatom-Bold_W.woff2') format('woff2'),
-         url('/static/webfonts/Rosatom-Bold_W.ttf') format('truetype');
+/* === ГЛОБАЛЬНЫЕ СТИЛИ === */
+body {
+    font-family: 'Rosatom', Arial, sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
 }
 
-@font-face {
-    font-family: 'Rosatom';
-    font-style: normal;
-    font-weight: 300; /* Light */
-    src: url('/static/webfonts/Rosatom-Light_W.woff2') format('woff2'),
-         url('/static/webfonts/Rosatom-Light_W.ttf') format('truetype');
-}
-
-/* Контейнер */
+/* === ОСНОВНОЙ КОНТЕЙНЕР === */
 .container {
-    max-width: 600px;
-    margin: 20px auto;
+    max-width: 500px;
+    margin: 40px auto;
     padding: 20px;
     background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    font-family: 'Rosatom', Arial, sans-serif; /* Основной шрифт */
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
 }
 
-/* Кнопки */
-button {
-    display: inline-block;
-    padding: 10px 15px;
+/* === ТИТУЛ === */
+h1 {
+    font-weight: bold;
+    font-size: 20px;
+    color: #333;
+}
+
+/* === СТИЛЬ СПОЙЛЕРА === */
+#toggleOptions {
+    background-color: #495057;
+    color: #fff;
+    width: 100%;
+    text-align: left;
     font-size: 16px;
+    padding: 10px;
     border-radius: 5px;
     border: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-    font-family: 'Rosatom', Arial, sans-serif; /* Основной шрифт */
+    margin-bottom: 10px;
 }
 
-button.btn-primary {
+#toggleOptions:hover {
+    background-color: #343a40;
+}
+
+.hidden {
+    display: none;
+}
+
+/* === СТИЛЬ ДЛЯ ФОРМЫ === */
+.form-control {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+/* === КНОПКИ === */
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 15px;
+    font-size: 14px;
+    border-radius: 5px;
+    border: none;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+/* Глобальные стили для .btn-primary (на других страницах) */
+.btn-primary {
     background-color: #007bff;
-    color: #fff;
-    font-weight: 700; /* Жирный шрифт для акцента */
+    color: white;
+    flex: 1;
+    margin: 5px;
 }
 
-button.btn-primary:hover {
+.btn-primary:hover {
     background-color: #0056b3;
 }
 
-button.btn-secondary {
-    background-color: #6c757d;
-    color: #fff;
-    font-weight: 400; /* Regular */
-}
-
-button.btn-secondary:hover {
-    background-color: #5a6268;
-}
-
-button.btn-danger {
+.btn-danger {
     background-color: #dc3545;
-    color: #fff;
-    font-weight: 700; /* Жирный для акцента */
+    color: white;
+    width: 100%;
 }
 
-button.btn-danger:hover {
-    background-color: #c82333;
+.btn-danger:hover {
+    background-color: #b02a37;
 }
 
-/* Прогресс-бар */
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    width: 100%;
+}
+
+.btn-secondary:hover {
+    background-color: #565e64;
+}
+
+.btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* === СПИСОК ФАЙЛОВ === */
+.file-name {
+    flex-grow: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+}
+
+.file-list-container {
+    max-width: 500px;
+    width: 100%;
+    background: #f1f1f1;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 14px;
+    min-height: 50px;
+    margin: 20px auto 10px;
+    /* Удалены overflow-y и max-height */
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+    word-break: break-all;
+    overflow: hidden;
+}
+
+/* === ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ КНОПОК В uploads.html === */
+/* Уменьшаем расстояние между кнопками */
+.file-item .button-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;  /* уменьшенный gap */
+}
+
+/* Отменяем растяжение и задаём компактные отступы для кнопок uploads.html */
+.file-item .button-group .btn {
+    flex: none;
+    margin: 0 4px;
+    padding: 6px 10px;
+    white-space: nowrap;
+}
+
+/* === ПРОГРЕСС-БАР === */
 .progress {
+    width: 100%;
+    height: 15px;
     background-color: #e9ecef;
     border-radius: 5px;
-    height: 20px;
     overflow: hidden;
-    margin-bottom: 20px;
+    margin-top: 10px;
 }
 
 .progress-bar {
-    background-color: #007bff;
     height: 100%;
-    width: 0%;
-    transition: width 0.3s ease;
+    text-align: center;
+    font-weight: bold;
+    color: white;
+    transition: width 0.4s ease-in-out;
 }
 
-/* Container Styling */
-.container {
-    background: linear-gradient(to right, #f8f9fa, #e9ecef);
-    border-radius: 10px;
+/* === СОСТОЯНИЯ ПРОГРЕСС-БАРА === */
+.bg-primary {
+    background-color: #007bff !important;
+}
+
+.bg-success {
+    background-color: #28a745 !important;
+}
+
+.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+/* === Кнопка удаления (иконка корзины) === */
+.btn-delete {
+    flex-shrink: 0;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px;
+    border-radius: 50%;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.btn-delete:hover {
+    background-color: #b02a37;
+}
+
+/* ===== Стили для success ===== */
+
+/* Контейнер для success */
+.success-container {
+    max-width: 500px;
+    margin: 40px auto;
     padding: 20px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-/* Button Hover Effects */
-.btn-secondary:hover {
-    background-color: #5a6268;
-    color: #ffffff;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Input Group Styling */
-.input-group {
-    margin-bottom: 20px;
+    background-color: #fff;
     border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
 }
 
-/* Form Control Styling */
-.form-control {
-    border-radius: 0;
-    padding: 15px;
-    font-family: 'Rosatom', Arial, sans-serif;
-    font-weight: 400;
+/* Стили для группы ввода ссылки и кнопки копирования */
+.input-group {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
 }
 
-/* Primary Button */
-.btn-primary {
-    border-radius: 0;
+.input-group input {
+    flex: 1;
+    min-width: 0;
+    height: 42px;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.copy-btn {
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 15px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+}
+
+.copy-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Кнопка возврата (загрузить ещё файлы) */
+.back-button {
+    display: block;
+    margin: 10px auto;
+}
+
+/* ============ МЕДИА-ЗАПРОСЫ ДЛЯ ПК ============ */
+@media (min-width: 768px) {
+    .container {
+        max-width: 700px;
+        margin: 60px auto;
+        padding: 30px;
+    }
+    .file-list-container {
+        max-width: 700px;
+    }
+    h1 {
+        font-size: 28px;
+    }
+    #toggleOptions {
+        font-size: 18px;
+        padding: 12px;
+    }
+    .form-control {
+        font-size: 16px;
+        padding: 12px;
+    }
+    .btn {
+        padding: 12px 20px;
+        font-size: 16px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .container {
+        max-width: 960px;
+        margin: 80px auto;
+        padding: 40px;
+    }
+    .file-list-container {
+        max-width: 960px;
+    }
+}
+
+/* ============ ДОПОЛНИТЕЛЬНЫЕ СТИЛИ ДЛЯ INDEX И UPLOADS ============ */
+
+/* Стили для ссылки «Мои архивы» на index.html */
+nav a {
+    display: inline-block;
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background-color 0.3s;
+    margin: 10px 0;
+}
+
+nav a:hover {
+    background-color: #0056b3;
 }

@@ -1,22 +1,40 @@
-from app.main import app  # Импортируем приложение из main.py
-from waitress import serve
 import os
 import logging
+from waitress import serve
+from app.main import app  # Импортируем приложение Flask
 
-# Настройка логирования
+# Очистка существующих обработчиков для Python 3.7 (force=True не доступен)
+root_logger = logging.getLogger()
+if root_logger.hasHandlers():
+    root_logger.handlers.clear()
+
+# Настройка логирования только один раз в точке входа
 logging.basicConfig(
-    level=logging.DEBUG,  # Уровень логирования
-    format='%(asctime)s - %(levelname)s - %(message)s'  # Формат вывода
+    level=os.getenv("LOG_LEVEL", "INFO"),
+    format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# Определяем параметры запуска
-HOST = os.getenv('HOST', '0.0.0.0')  # По умолчанию слушает на всех интерфейсах
-PORT = int(os.getenv('PORT', 8000))  # По умолчанию порт 8000
+HOST = os.getenv('HOST', '0.0.0.0')  # В режиме разработки можно использовать 0.0.0.0
+PORT = int(os.getenv('PORT', 8000))
+
+# Количество потоков, используемых Waitress
+THREADS = int(os.getenv("WAITRESS_THREADS", 4))
+
+logging.info("Запуск сервера в Docker-среде с Waitress")
+
+def run_server():
+    try:
+        serve(
+            app,
+            host=HOST,
+            port=PORT,
+            max_request_body_size=10 * 1024 * 1024 * 1024,  # Ограничение на размер файла: 10 ГБ
+            threads=THREADS,
+            expose_tracebacks=False  # В продакшене лучше не показывать трассировки ошибок
+        )
+    except Exception as e:
+        logging.error(f"Ошибка при запуске сервера: {e}")
+        raise
 
 if __name__ == '__main__':
-    if os.getenv('DOCKER_ENV'):  # Если запускается в Docker
-        logging.info("Запуск в Docker-среде с Waitress")
-        serve(app, host=HOST, port=PORT, max_request_body_size=10 * 1024 * 1024 * 1024)
-    else:  # Локальный режим (для разработки)
-        logging.info("Запуск в локальной среде в отладочном режиме")
-        app.run(debug=True, host=HOST, port=PORT, max_request_body_size=10 * 1024 * 1024 * 1024)
+    run_server()

@@ -1,0 +1,64 @@
+<!-- templates/uploads.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мои архивы</title>
+  <link rel="stylesheet" href="/static/css/styles.css?2">
+  <style>
+    .file-list-container {
+      list-style: none;
+      padding: 0;
+    }
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .button-group {
+      display: flex;
+      gap: 8px;
+    }
+    .btn {
+      white-space: nowrap;
+      padding: 6px 12px;
+      font-size: 14px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📁 Ваши архивы</h1>
+    {% if uploads %}
+      <ul class="file-list-container">
+        {% for upload in uploads %}
+          <li class="file-item">
+            <span class="file-name">
+                📦 {{ upload.archive_name }} — {{ upload.file_count }} файлов, {{ (upload.filesize / (1024 * 1024)) | round(2) }} MB
+            </span>
+            <div class="button-group">
+              <a href="{{ url_for('view_archive', archive=upload.archive_name) }}" class="btn btn-primary">👀 Просмотр</a>
+              <a href="{{ url_for('download_files', unique_id=upload.archive_name) }}" class="btn btn-primary">⬇ Скачать</a>
+              <form action="{{ url_for('delete_archive', archive=upload.archive_name) }}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-danger">🗑 Удалить</button>
+              </form>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-center">Архивов не найдено.</p>
+    {% endif %}
+    <div class="button-group" style="justify-content: center; margin-top: 20px;">
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">🏠 На главную</a>
+    </div>
+  </div>
+</body>
+</html>

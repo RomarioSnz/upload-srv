@@ -1,34 +1,37 @@
-import os
+from pathlib import Path
 import uuid
-import hashlib
 import time
 import logging
 
-def create_unique_folder(base_path):
-    """
-    Создаёт уникальную папку в указанной директории.
-    Возвращает уникальный ID и путь к созданной папке.
-    """
-    # Проверяем базовую директорию
-    if not os.path.exists(base_path):
-        logging.error(f"Базовая папка не найдена: {base_path}")
-        raise FileNotFoundError(f"Базовая папка не найдена: {base_path}")
+# Чистое имя пользователя
+def sanitize_username(username):
+    return username.split('@')[0].replace(".", "_")
+def sanitize_filename(name):
+    return "".join(c if c.isalnum() or c in ("_", "-", " ") else "_" for c in name).strip()
 
-    try:
-        unique_id = str(uuid.uuid4())  # Генерация UUID
-        folder_path = os.path.join(base_path, unique_id)
-        os.makedirs(folder_path, exist_ok=True)  # Создаём папку
-        logging.info(f"Создана уникальная папка: {folder_path}")
-        return unique_id, folder_path
-    except Exception as e:
-        logging.error(f"Ошибка создания папки {folder_path}: {e}")
-        raise
+def create_user_upload_folder(base_path, username, custom_zip_name=""):
+    """
+    Создаёт уникальный каталог внутри каталога пользователя.
+    Если пользователь указал имя архива, оно используется. Иначе генерируется автоматически.
+    """
+    sanitized_username = sanitize_username(username)
+    timestamp = time.strftime("%d%m%y_%H") #"%Y%m%d_%H%M%S"
+    unique_code = str(uuid.uuid4())[:4]
 
-def generate_unique_filename(filename):
-    """
-    Генерирует уникальное имя файла с сохранением исходного расширения.
-    Добавляет к имени временную метку для уникальности.
-    """
-    base, ext = os.path.splitext(filename)
-    timestamp = int(time.time())  # Добавляем метку времени
-    return f"{base}_{timestamp}{ext}"  # Пример: file_1703513262.pdf
+    # Определяем имя архива
+    if custom_zip_name:
+        zip_name = sanitize_filename(custom_zip_name) + ".zip"
+    else:
+        zip_name = f"{sanitized_username}_{timestamp}_{unique_code}.zip"
+
+    folder_name = zip_name.replace(".zip", "")  # переводим имя каталог в имя архива без .zip
+    user_folder = Path(base_path) / sanitized_username  # Каталог пользователя
+    upload_folder = user_folder / folder_name         # Уникальный каталог для загрузки
+
+    # Создаем каталоги
+    upload_folder.mkdir(parents=True, exist_ok=True)
+    logging.info(f"Создана папка загрузки: {upload_folder}")
+
+    zip_path = user_folder / zip_name  # Итоговый путь к ZIP-архивау
+
+    return str(upload_folder), str(zip_path)

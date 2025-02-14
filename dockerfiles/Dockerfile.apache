@@ -1,0 +1,27 @@
+# dockerfiles/Dockerfile.apache
+
+FROM registry.astralinux.ru/library/astra/ubi17-apache24:latest
+WORKDIR /app
+
+#COPY sources.list /etc/apt/sources.list
+
+RUN apt-get update && apt-get install -y \
+    libapache2-mod-auth-gssapi \
+    libapache2-mod-wsgi-py3 \
+    krb5-user \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN a2enmod auth_gssapi && a2enmod wsgi && a2enmod rewrite headers proxy proxy_http
+
+COPY apache/apache2.conf /etc/apache2/sites-available/upload.conf
+COPY apache/apache_sso.keytab /etc/apache2/keys/apache_sso.keytab
+RUN chmod 777 /etc/apache2/keys/apache_sso.keytab
+
+COPY apache/krb5.conf /etc/krb5.conf
+RUN export KRB5_CONFIG=/etc/krb5.conf
+COPY app/ /var/www/html/app/
+
+RUN rm -f /etc/apache2/sites-enabled/000-default.conf && a2ensite upload
+
+EXPOSE 80
+CMD ["/usr/sbin/apachectl", "-D", "FOREGROUND"]
