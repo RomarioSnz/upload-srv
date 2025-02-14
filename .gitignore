@@ -1,6 +1,7 @@
 /.idea
 /.venv
 /requirements.txt
-/apache
+/apache/apache_sso.keytab
+/apache/apache_sso.keytab
 /sources.list
 cleardocker.sh
